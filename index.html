@@ -45,15 +45,30 @@
             border: 1px solid #ccc;
             padding: 10px;
         }
+        /* Заголовок с крабиками */
         h1 {
             text-align: center;
             margin-bottom: 30px;
+        }
+        /* Увеличиваем краб-эмодзи и добавляем отступ */
+        .crab {
+            font-size: 1.5em; /* увеличиваем размер */
+            margin: 0 10px;  /* отступы слева и справа */
         }
     </style>
 </head>
 <body>
 
-<h1>Калькулятор ОГТС</h1>
+<!-- Заголовок с крабиками слева и справа -->
+<h1>
+  <!-- Левая картинка -->
+    <img src="crab.png" alt="Логотип краба" style="width: 60px; margin-right: 10px;">
+    
+    Калькулятор ОГТС
+    
+    <!-- Правая картинка -->
+    <img src="crab.png" alt="Логотип краба" style="width: 60px; margin-left: 10px;">
+</h1>
 
 <!-- Цена Контракта -->
 <div class="field-group">
@@ -128,11 +143,11 @@
 </div>
 
 <script>
-// ==================== Глобальные переменные ====================
+/* ==================== Глобальные переменные ==================== */
 let stagePrices = [];
 let lastChangedField = null; // 'without', 'with', 'rate'
 
-// ==================== Утилиты форматирования ====================
+/* ==================== Утилиты форматирования ==================== */
 
 /**
  * parseFormattedNumber:
@@ -178,7 +193,7 @@ function onGeneralNumberInput(inputElem) {
     inputElem.value = formatNumber(parsed);
 }
 
-// ==================== Блок 1: Расчёт аванса и этапов ====================
+/* ================ Блок 1: Расчёт аванса и этапов ================ */
 
 function generateStages() {
     const contractPrice = parseFormattedNumber(document.getElementById('contractPrice').value);
@@ -189,11 +204,11 @@ function generateStages() {
     const stagesContainer = document.getElementById('stagesContainer');
     stagesContainer.innerHTML = '';
 
-    // Допустимый аванс (число)
+    // Допустимый аванс
     const allowedAdvance = (contractPrice * advancePercent / 100).toFixed(2);
     document.getElementById('allowedAdvance').innerText = formatNumber(parseFloat(allowedAdvance));
 
-    // Сравнение фактического и допустимого аванса
+    // Сравнение аванса
     const advanceDifference = (actualAdvance - allowedAdvance).toFixed(2);
     let percentDifference = '0';
     if (parseFloat(allowedAdvance) !== 0) {
@@ -206,7 +221,7 @@ function generateStages() {
             : `Не хватает ${formatNumber(Math.abs(parseFloat(advanceDifference)))} (${percentDifference}%)`)
         : '';
 
-    // Сокращаем массив, если уменьшили кол-во этапов
+    // Сохраняем (обрезаем) массив этапов, если уменьшили кол-во
     stagePrices = stagePrices.slice(0, stageCount);
 
     // Генерация полей по количеству этапов
@@ -224,11 +239,11 @@ function generateStages() {
         stageInput.id = `stagePrice${i}`;
         stageInput.placeholder = `Введите цену ${i} этапа`;
 
-        // Если уже есть сохранённое значение
+        // Если уже было сохранено
         const existingValue = stagePrices[i - 1] || 0;
         stageInput.value = formatNumber(existingValue);
 
-        // Обработка oninput (по аналогии с onGeneralNumberInput)
+        // Обработка oninput
         stageInput.oninput = () => {
             const rawVal = stageInput.value.trim();
             if (!rawVal) {
@@ -255,13 +270,12 @@ function generateStages() {
         allowedStageSpan.className = 'result';
         allowedStageSpan.innerHTML = `Допустимая сумма аванса для ${i} этапа: <span id="allowedStage${i}">0</span>`;
 
-        // Собираем всё
         stageDiv.appendChild(label);
         stageDiv.appendChild(stageInput);
         stageDiv.appendChild(allowedStageSpan);
         stagesContainer.appendChild(stageDiv);
 
-        // Первичный пересчёт
+        // Пересчёт
         calculateStageAllowed(i, advancePercent);
     }
 }
@@ -272,7 +286,7 @@ function calculateStageAllowed(stageIndex, advancePercent) {
     document.getElementById(`allowedStage${stageIndex}`).innerText = formatNumber(parseFloat(allowedStageAdvance));
 }
 
-// ==================== Блок 2: Расчёт с/без НДС ====================
+/* ================ Блок 2: Расчёт с/без НДС ================ */
 
 function calculateVAT() {
     const withoutVATInput = document.getElementById('sumWithoutVAT');
@@ -280,7 +294,7 @@ function calculateVAT() {
     const vatRateInput = document.getElementById('vatRate');
     const vatAmountSpan = document.getElementById('vatAmount');
 
-    // Сырые значения для трёх полей
+    // Сырые строки
     const rawWithout = withoutVATInput.value.trim();
     const rawWith = withVATInput.value.trim();
     const rawRate = vatRateInput.value.trim();
@@ -290,13 +304,13 @@ function calculateVAT() {
     const lastCharWith = rawWith.slice(-1);
     const lastCharRate = rawRate.slice(-1);
 
-    // Парсим значения (без последнего символа, если это . или ,)
+    // Парсим (если заканчивается на '.' или ',', парсим без этого символа)
     let partialWithout = rawWithout;
     let partialWith = rawWith;
     let partialRate = rawRate;
 
     if (lastCharWithout === '.' || lastCharWithout === ',') {
-        partialWithout = rawWithout.slice(0, -1); 
+        partialWithout = rawWithout.slice(0, -1);
     }
     if (lastCharWith === '.' || lastCharWith === ',') {
         partialWith = rawWith.slice(0, -1);
@@ -311,7 +325,7 @@ function calculateVAT() {
 
     if (rate < 0) return;
 
-    // Пересчитываем в зависимости от того, какое поле было изменено последним
+    // Логика расчёта в зависимости от последнего изменённого поля
     if (lastChangedField === 'without') {
         // Сумма с НДС = без НДС * (1 + rate/100)
         withVAT = withoutVAT * (1 + rate / 100);
@@ -331,7 +345,7 @@ function calculateVAT() {
 
     const vatAmount = withVAT - withoutVAT;
 
-    // Теперь, если последний символ не "." и не ",", переформатируем поля
+    // Переформатируем значения, только если не оканчиваются на '.' или ','
     if (lastCharWithout !== '.' && lastCharWithout !== ',') {
         withoutVATInput.value = formatNumber(withoutVAT);
     }
